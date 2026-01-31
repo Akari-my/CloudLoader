@@ -1,0 +1,13 @@
+loader:
+  dir: modules
+  mode: delayed
+
+staging:
+  cleanup: false
+
+logs:
+  errors: true
+  scan: true
+  load_order: true
+  modules_loaded: true
+  skipped: true

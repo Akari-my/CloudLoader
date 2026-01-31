@@ -1,0 +1,10 @@
+name: CloudLoader
+version: 1.0.0
+main: Mellooh\CloudLoader\CloudLoader
+api: 5.0.0
+depend:
+  - DevTools
+
+permissions:
+  cloudloader.command:
+    default: op
