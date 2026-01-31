@@ -123,3 +123,12 @@ logs:
   load_order: true
   modules_loaded: true
   skipped: true
+```
+
+---
+
+## ⭐ Contribute
+
+- Found a bug? Open an issue
+- Pull requests welcome
+- Star the repo if you like the project!
