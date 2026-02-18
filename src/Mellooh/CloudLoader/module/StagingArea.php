@@ -2,9 +2,14 @@
 
 namespace Mellooh\CloudLoader\module;
 
+use Mellooh\CloudLoader\log\LoggerProxy;
+
 class StagingArea{
 
-    public function __construct(private string $path){}
+    public function __construct(
+        private string $path,
+        private LoggerProxy $logger
+    ){}
 
     public function path(): string{
         return $this->path;
@@ -15,25 +20,26 @@ class StagingArea{
         $this->clearDir($this->path);
     }
 
-    public function cleanup(): void{
-        $this->clearDir($this->path);
-    }
+    public function stage(string $targetDir, string $name, string $strategy): string{
+        $dst = rtrim($this->path, "/\\") . DIRECTORY_SEPARATOR . $name;
 
-    public function stage(string $targetDir, string $name): string{
-        $link = rtrim($this->path, "/\\") . DIRECTORY_SEPARATOR . $name;
-
-        if(file_exists($link) || is_link($link)){
-            $this->deletePath($link);
+        if(file_exists($dst) || is_link($dst)){
+            $this->deletePath($dst);
         }
 
-        if(function_exists("symlink")){
-            if(@symlink($targetDir, $link)){
-                return $link;
+        if($strategy === "symlink"){
+            if(function_exists("symlink") && @symlink($targetDir, $dst)){
+                return $dst;
+            }
+            if(PHP_OS_FAMILY === "Windows"){
+                $this->logger->warning("Symlink failed on Windows for $name, falling back to copy");
+            }else{
+                $this->logger->warning("Symlink failed for $name, falling back to copy");
             }
         }
 
-        $this->copyTree($targetDir, $link);
-        return $link;
+        $this->copyTree($targetDir, $dst);
+        return $dst;
     }
 
     private function clearDir(string $dir): void{
@@ -83,14 +89,6 @@ class StagingArea{
 
             $from = $src . DIRECTORY_SEPARATOR . $entry;
             $to = $dst . DIRECTORY_SEPARATOR . $entry;
-
-            if(is_link($from)){
-                $real = @readlink($from);
-                if(is_string($real) && $real !== ""){
-                    @symlink($real, $to);
-                }
-                continue;
-            }
 
             if(is_dir($from)){
                 $this->copyTree($from, $to);

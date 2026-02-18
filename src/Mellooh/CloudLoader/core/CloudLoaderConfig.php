@@ -14,8 +14,6 @@ final class CloudLoaderConfig{
     private string $stagingStrategy;
     private bool $stagingResetOnStart;
 
-    private int $installTimeoutSeconds;
-
     private LogSettings $logs;
 
     public function __construct(Config $config){
@@ -26,11 +24,6 @@ final class CloudLoaderConfig{
         $this->stagingStrategy = ($strategy === "copy" || $strategy === "symlink") ? $strategy : "symlink";
 
         $this->stagingResetOnStart = (bool)$config->getNested("staging.reset_on_start", true);
-
-        $this->installTimeoutSeconds = (int)$config->getNested("install.timeout_seconds", 30);
-        if($this->installTimeoutSeconds < 5){
-            $this->installTimeoutSeconds = 5;
-        }
 
         $this->logs = new LogSettings(
             (bool)$config->getNested("logs.errors", true),
@@ -56,10 +49,6 @@ final class CloudLoaderConfig{
 
     public function stagingResetOnStart(): bool{
         return $this->stagingResetOnStart;
-    }
-
-    public function installTimeoutSeconds(): int{
-        return $this->installTimeoutSeconds;
     }
 
     public function logs(): LogSettings{

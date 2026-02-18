@@ -22,31 +22,6 @@ class DependencyResolver{
             }
         }
 
-        $changed = true;
-        while($changed){
-            $changed = false;
-
-            foreach($eligible as $name => $module){
-                $missingHere = [];
-                foreach($module->depend as $dep){
-                    if(isset($eligible[$dep])){
-                        continue;
-                    }
-                    $p = $this->pluginManager->getPlugin($dep);
-                    if($p !== null && $p->isEnabled()){
-                        continue;
-                    }
-                    $missingHere[] = $dep;
-                }
-
-                if($missingHere !== []){
-                    $missing[$name] = array_values(array_unique(array_merge($missing[$name] ?? [], $missingHere)));
-                    unset($eligible[$name]);
-                    $changed = true;
-                }
-            }
-        }
-
         $loadBeforeMap = [];
         foreach($eligible as $aName => $a){
             foreach($a->loadBefore as $target){
@@ -72,13 +47,11 @@ class DependencyResolver{
                     $deps[] = $d;
                 }
             }
-
             foreach($module->softDepend as $s){
                 if(isset($eligible[$s])){
                     $deps[] = $s;
                 }
             }
-
             foreach(($loadBeforeMap[$name] ?? []) as $lb){
                 if(isset($eligible[$lb])){
                     $deps[] = $lb;
@@ -86,11 +59,17 @@ class DependencyResolver{
             }
 
             $deps = array_values(array_unique($deps));
+            sort($deps, SORT_STRING);
 
             foreach($deps as $dep){
                 $edges[$dep][] = $name;
                 $inDegree[$name]++;
             }
+        }
+
+        foreach($edges as $k => $v){
+            sort($v, SORT_STRING);
+            $edges[$k] = $v;
         }
 
         $queue = [];
@@ -99,17 +78,20 @@ class DependencyResolver{
                 $queue[] = $name;
             }
         }
+        sort($queue, SORT_STRING);
 
         $order = [];
         while($queue !== []){
             $n = array_shift($queue);
             $order[] = $eligible[$n];
+
             foreach($edges[$n] as $m){
                 $inDegree[$m]--;
                 if($inDegree[$m] === 0){
                     $queue[] = $m;
                 }
             }
+            sort($queue, SORT_STRING);
         }
 
         $cycleNodes = [];
@@ -118,10 +100,11 @@ class DependencyResolver{
                 $cycleNodes[] = $name;
             }
         }
+        sort($cycleNodes, SORT_STRING);
 
         if($this->logs->loadOrder){
             $names = array_map(static fn(ModuleInfo $m) => $m->name, $order);
-            $this->logger->info("load order: " . implode(" -> ", $names));
+            $this->logger->info("CloudLoader load order: " . implode(" -> ", $names));
         }
 
         return new ResolutionResult($order, $missing, $cycleNodes);
@@ -139,6 +122,8 @@ class DependencyResolver{
             }
             $missing[] = $dep;
         }
-        return array_values(array_unique($missing));
+        $missing = array_values(array_unique($missing));
+        sort($missing, SORT_STRING);
+        return $missing;
     }
 }

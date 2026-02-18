@@ -2,16 +2,9 @@
 
 namespace Mellooh\CloudLoader;
 
-use DevTools\FolderPluginLoader;
 use Mellooh\CloudLoader\command\CloudLoaderCommand;
 use Mellooh\CloudLoader\config\CloudLoaderConfig;
 use Mellooh\CloudLoader\core\CloudModuleManager;
-use Mellooh\CloudLoader\log\LoggerProxy;
-use Mellooh\CloudLoader\module\DependencyResolver;
-use Mellooh\CloudLoader\module\ModuleLoader;
-use Mellooh\CloudLoader\module\ModuleScanner;
-use Mellooh\CloudLoader\module\ModuleScanResult;
-use Mellooh\CloudLoader\module\StagingArea;
 use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\ClosureTask;
 
@@ -29,7 +22,7 @@ class CloudLoader extends PluginBase {
 
         @mkdir($this->moduleManager->getModulesDir(), 0777, true);
 
-        $this->getServer()->getCommandMap()->register("cloudloader", new CloudLoaderCommand($this));
+        $this->getServer()->getCommandMap()->register("cloudloader", new CloudLoaderCommand($this, "cloudloader"));
 
         if($this->settings->mode() === "delayed"){
             $this->getScheduler()->scheduleDelayedTask(new ClosureTask(function(): void{

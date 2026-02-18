@@ -13,21 +13,32 @@ class ModuleLoader{
         private LoggerProxy $logger,
         private LogSettings $logs,
         private StagingArea $staging,
-        private bool $cleanup
-    ){}
+        private string $strategy){}
 
-    public function loadAll(ResolutionResult $resolution): void{
-        $this->staging->reset();
+    public function stageAll(ResolutionResult $resolution, array $alreadyPresent): int{
+        $count = 0;
 
         foreach($resolution->order as $module){
+            if(isset($alreadyPresent[$module->name])){
+                continue;
+            }
             if($this->pluginManager->getPlugin($module->name) !== null){
                 continue;
             }
-            $this->staging->stage($module->path, $module->name);
+            $this->staging->stage($module->path, $module->name, $this->strategy);
+            $count++;
         }
 
+        return $count;
+    }
+
+    public function loadFromStaging(string $stagingPath): void{
         $loadErrorCount = 0;
-        $this->pluginManager->loadPlugins($this->staging->path(), $loadErrorCount);
+        $this->pluginManager->loadPlugins($stagingPath, $loadErrorCount);
+    }
+
+    public function enableOrdered(ResolutionResult $resolution): int{
+        $enabled = 0;
 
         foreach($resolution->order as $module){
             $plugin = $this->pluginManager->getPlugin($module->name);
@@ -41,6 +52,7 @@ class ModuleLoader{
 
             if(!$plugin->isEnabled()){
                 $this->pluginManager->enablePlugin($plugin);
+                $enabled++;
             }
 
             if($this->logs->modulesLoaded){
@@ -48,8 +60,6 @@ class ModuleLoader{
             }
         }
 
-        if($this->cleanup){
-            $this->staging->cleanup();
-        }
+        return $enabled;
     }
 }

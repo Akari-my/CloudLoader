@@ -3,7 +3,8 @@ loader:
   mode: delayed
 
 staging:
-  cleanup: false
+  strategy: symlink
+  reset_on_start: true
 
 logs:
   errors: true
@@ -11,3 +12,4 @@ logs:
   load_order: true
   modules_loaded: true
   skipped: true
+  debug: false
